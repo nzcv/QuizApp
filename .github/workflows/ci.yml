@@ -30,17 +30,37 @@ jobs:
       #     java-version: 11
       - name: Build Flutter application for Android
         run: flutter build apk --target-platform=android-arm64
-      - name: Send feishu message
+      - name: Notify Feishu on Status Change
+        if: always()
         env:
-          ACTIONS_FEISHU_TAG: 'v1.3.1'
-          INPUT_WEBHOOK: "https://open.feishu.cn/open-apis/bot/v2/hook/03d57580-5e06-4ac2-8263-3f1927219fd6"
-          INPUT_MESSAGE_TYPE: "post"
-          INPUT_TITLE: "I'm title"
-          INPUT_CONTENT: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          FEISHU_WEBHOOK: "https://open.feishu.cn/open-apis/bot/v2/hook/03d57580-5e06-4ac2-8263-3f1927219fd6"
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          wget -q https://github.com/xiachufang/actions-feishu/releases/download/${{ env.ACTIONS_FEISHU_TAG }}/linux-amd64-actions-feishu.tar.gz
-          tar zxf linux-amd64-actions-feishu.tar.gz feishu
-          ./feishu
+          MESSAGE='{
+            "msg_type": "interactive",
+            "card": {
+              "header": {
+                "title": { "tag": "plain_text", "content": "🔄 Workflow ${{ job.status }}" },
+                "template": "${{ job.status == 'success' && 'green' || 'red' }}"
+              },
+              "elements": [{
+                "tag": "div",
+                "text": {
+                  "tag": "lark_md",
+                  "content": "**Workflow:** ${{ github.workflow }}\n**Branch:** ${{ github.ref_name }}\n**Status:** ${{ job.status }}\n**Triggered by:** ${{ github.actor }}"
+                }
+              }, {
+                "tag": "action",
+                "actions": [{
+                  "tag": "button",
+                  "text": { "tag": "plain_text", "content": "View Run" },
+                  "url": "${{ env.RUN_URL }}",
+                  "type": "primary"
+                }]
+              }]
+            }
+          }'
+          curl -X POST -H "Content-Type: application/json" -d "$MESSAGE" "$FEISHU_WEBHOOK"      
       - name: Rename arm64-v8a APK
         run: mv build/app/outputs/flutter-apk/app-release.apk android-arm64-v8a.apk      
       - name: Upload arm64-v8a APK
