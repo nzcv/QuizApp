@@ -36,8 +36,7 @@ jobs:
           INPUT_WEBHOOK: "https://open.feishu.cn/open-apis/bot/v2/hook/03d57580-5e06-4ac2-8263-3f1927219fd6"
           INPUT_MESSAGE_TYPE: "post"
           INPUT_TITLE: "I'm title"
-          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          INPUT_CONTENT: "RUN_URL: ${{ RUN_URL }}"
+          INPUT_CONTENT: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: |
           wget -q https://github.com/xiachufang/actions-feishu/releases/download/${{ env.ACTIONS_FEISHU_TAG }}/linux-amd64-actions-feishu.tar.gz
           tar zxf linux-amd64-actions-feishu.tar.gz feishu
